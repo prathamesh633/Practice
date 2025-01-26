@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sqldb
+  labels:
+     app: mysqldb
+     type: back-end
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      type: back-end
+  template:
+    metadata:
+     name: mysqldb-pod
+     labels:
+        app: mysqldb
+        type: back-end
+    spec:
+      containers:
+      - name: mysqldb
+        image: prathameshbhujade/mysqldb:2.0
+        ports:
+          - containerPort: 3306
+        env:
+          - name: MYSQL_DATABASE
+            value: studentapp
+          - name: MYSQL_USER
+            value: pratham
+          - name: MYSQL_PASSWORD
+            value: pratham123
+          - name: MYSQL_ROOT_PASSWORD
+            value: pratham123
+        volumeMounts:
+        - name: mysql-pv
+          mountPath: /var/lib/mysql
+        livenessProbe:
+          tcpSocket:
+            port: 3306
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: mysql-pv
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
+      nodeSelector:
+        capacity: once
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+   name: sqldb-svc
+spec:
+   ports:
+     - port: 3306
+   clusterIP: None
+   selector:
+      app: mysqldb
+      type: back-end
+
